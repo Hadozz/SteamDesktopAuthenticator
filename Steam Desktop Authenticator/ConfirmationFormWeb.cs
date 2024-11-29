@@ -17,16 +17,39 @@ namespace Steam_Desktop_Authenticator
             this.steamAccount = steamAccount;
             this.Text = String.Format("Trade Confirmations - {0}", steamAccount.AccountName);
         }
+        
+        private void PromptRefreshLogin(SteamGuardAccount account)
+        {
+            LoginForm loginForm = new LoginForm(LoginForm.LoginType.Refresh, account);
+            loginForm.ShowDialog();
+        }
+
         private async Task LoadData()
         {
             this.splitContainer1.Panel2.Controls.Clear();
 
-            // Check for a valid refresh token first
             if (steamAccount.Session.IsRefreshTokenExpired())
             {
-                MessageBox.Show("Your session has expired. Use the login again button under the selected account menu.", "Trade Confirmations", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                this.Close();
-                return;
+                DialogResult result = MessageBox.Show(
+                    "Your session has expired. Log in again to refresh the session by selecting OK, or use the button in the menu of the selected account.",
+                    "Trade Confirmations",
+                    MessageBoxButtons.OKCancel,
+                    MessageBoxIcon.Error
+                );
+                if (result == DialogResult.OK)
+                {
+                    this.PromptRefreshLogin(steamAccount);
+                    if (steamAccount.Session.IsRefreshTokenExpired())
+                    {
+                        this.Close();
+                        return;
+                    }
+                }
+                else
+                {
+                    this.Close();
+                    return;
+                }
             }
 
             // Check for a valid access token, refresh it if needed
